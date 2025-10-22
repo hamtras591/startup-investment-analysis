@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+*.egg-info/
+
+# Virtual Environment
+.venv/
+venv/
+env/
+
+# IDEs
+.idea/
+*.swp
+*.swo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data (archivos pesados)
+*.csv
+*.xlsx
+*.json
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Environment variables
+.env
+api_keys.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Reports
+reports/figures/*.png
