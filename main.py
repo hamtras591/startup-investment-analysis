@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import matplotlib as mpl
 import requests
+import kaggle
 
 print(pd.__version__)
 print(np.__version__)
