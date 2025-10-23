@@ -1,22 +1,9 @@
-"""
-CONFIGURACIÓN INTELIGENTE DEL PROYECTO
-=======================================
-Este archivo:
-1. Detecta automáticamente la estructura del proyecto
-2. Verifica si ya existen las carpetas necesarias
-3. Si existen, las usa
-4. Si NO existen, las crea
-5. Siempre garantiza que los archivos vayan al lugar correcto
-
-Autor: Anderson Sebastian Rubio Pacheco
-Versión: 2.0.0
-"""
-
+import json
 from pathlib import Path
-import sys
+from typing import Dict, Any
 
 # ============================================================
-# DETECCIÓN AUTOMÁTICA DE LA RAÍZ DEL PROYECTO
+# Detección automática de la raíz del proyecto
 # ============================================================
 
 def find_project_root(start_path: Path = None) -> Path:
@@ -39,7 +26,10 @@ def find_project_root(start_path: Path = None) -> Path:
     if start_path is None:
         # Este archivo está en: proyecto/src/data/config.py
         start_path = Path(__file__).resolve().parent
+        # Hacemos un print para verificar que la ruta en la que está el archivo
+        print(f"📑 La ruta donde esta este archivo es: {start_path}")
 
+    # Declaración de variable iterable = current (actual)
     current = start_path
 
     # Marcadores que indican la raíz del proyecto
@@ -53,105 +43,148 @@ def find_project_root(start_path: Path = None) -> Path:
         '.gitignore'
     ]
 
-    # Subir máximo 5 niveles
-    for _ in range(5):
-        # Verificar si algún marcador existe en este nivel
+    # Le dice que suba un máximo de 5 niveles
+    for i in range(5):
+        # Revisa cada una de las pistas de los posibles archivos en la raíz del proyecto
         for marker in root_markers:
             if (current / marker).exists():
                 print(f"✅ Raíz del proyecto detectada: {current}")
-                print(f"   Marcador encontrado: {marker}")
+                print(f"🔑 Marcador encontrado: {marker}")
                 return current
-
-        # Subir un nivel
+        #? Si el for no encuentra ninguno de los archivos posibles, subimos 1 carpeta con el método parent() de la librería pathlib
         parent = current.parent
 
-        # Si llegamos a la raíz del sistema, detenernos
+        #! Si llegamos a la raíz del sistema, detenernos
         if parent == current:
             break
 
         current = parent
-
-    # Si no encontramos marcadores, asumir que estamos 3 niveles abajo
-    # proyecto/src/data/config.py → proyecto
+        print(f"📁 Ruta buscada: {current}")
+        # Si no encontramos marcadores, asumir que estamos 3 niveles abajo
+        # proyecto/src/data/config.py → proyecto
     fallback = Path(__file__).resolve().parent.parent.parent
     print(f"⚠️ No se encontró marcador de raíz. Usando: {fallback}")
     return fallback
 
 
 # ============================================================
-# CONFIGURACIÓN DE RUTAS
+# Carga de configuración del Json
+# ============================================================
+
+def load_config_json(config_path: Path = None) -> Dict[str, Any]:
+    """
+    Carga la configuración desde el archivo JSON
+
+    Args:
+        config_path: Ruta al JSON (default: config/project_config.json)
+
+    Returns:
+        dict: Configuración cargada
+    """
+    if config_path is None:
+        project_root = find_project_root()
+        config_path = project_root / 'config' / 'project_config.json'
+
+    if not config_path.exists():
+        raise FileNotFoundError(
+            f"\n{'=' * 70}\n"
+            f"❌ NO SE ENCONTRÓ EL ARCHIVO DE CONFIGURACIÓN\n"
+            f"{'=' * 70}\n\n"
+            f"📍 Se esperaba en: {config_path}\n\n"
+            f"🔧 SOLUCIÓN:\n"
+            f"1. Crea la carpeta 'config/' en la raíz del proyecto\n"
+            f"2. Crea el archivo 'project_config.json'\n"
+            f"3. Copia el contenido del template\n\n"
+            f"💡 Ver ejemplo en: config/README.md\n"
+            f"{'=' * 70}\n"
+        )
+
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+
+        print(f"✅ Configuración cargada desde: {config_path.name}")
+        return config
+
+    except json.JSONDecodeError as e:
+        raise ValueError(
+            f"\n{'=' * 70}\n"
+            f"❌ ERROR EN EL ARCHIVO JSON\n"
+            f"{'=' * 70}\n\n"
+            f"📍 Archivo: {config_path}\n"
+            f"❌ Error: {e}\n\n"
+            f"🔧 SOLUCIÓN:\n"
+            f"1. Verifica que el JSON tenga formato correcto\n"
+            f"2. Usa un validador: https://jsonlint.com\n"
+            f"3. Verifica comas, comillas y llaves\n\n"
+            f"{'=' * 70}\n"
+        )
+
+# ============================================================
+# Configuración de rutas del proyecto
 # ============================================================
 
 # Detectar raíz del proyecto
-BASE_DIR = find_project_root()
+PROJECT_ROOT_FOLDER = find_project_root()
+
+# Cargar configuración
+try:
+    CONFIG = load_config_json()
+except Exception as e:
+    print(f"\n⚠️ Error al cargar configuración: {e}")
+    print("⚠️ Usando configuración por defecto vacía")
+    CONFIG = {
+        "input_files": {},
+        "output_files": {},
+        "kaggle_datasets": {}
+    }
 
 # Estructura estándar de carpetas para Data Science
-STANDARD_STRUCTURE = {
-    'data': BASE_DIR / 'data',
-    'data/raw': BASE_DIR / 'data' / 'raw',
-    'data/processed': BASE_DIR / 'data' / 'processed',
-    'data/external': BASE_DIR / 'data' / 'external',
-    'data/interim': BASE_DIR / 'data' / 'interim',
-    'notebooks': BASE_DIR / 'notebooks',
-    'reports': BASE_DIR / 'reports',
-    'reports/figures': BASE_DIR / 'reports' / 'figures',
-    'src': BASE_DIR / 'src',
-    'tests': BASE_DIR / 'tests',
-    'docs': BASE_DIR / 'docs',
+standar_structures = {
+    'data': PROJECT_ROOT_FOLDER / 'data',
+    'data/raw': PROJECT_ROOT_FOLDER / 'data' / 'raw',
+    'data/processed': PROJECT_ROOT_FOLDER / 'data' / 'processed',
+    'data/external': PROJECT_ROOT_FOLDER / 'data' / 'external',
+    'data/interim': PROJECT_ROOT_FOLDER / 'data' / 'interim',
+    'notebooks': PROJECT_ROOT_FOLDER / 'notebooks',
+    'reports': PROJECT_ROOT_FOLDER / 'reports',
+    'reports/figures': PROJECT_ROOT_FOLDER / 'reports' / 'figures',
+    'src': PROJECT_ROOT_FOLDER / 'src',
+    'tests': PROJECT_ROOT_FOLDER / 'tests',
+    'docs': PROJECT_ROOT_FOLDER / 'docs',
+    'config': PROJECT_ROOT_FOLDER / 'config',
+    'scripts': PROJECT_ROOT_FOLDER / 'scripts'
 }
 
 # Rutas principales (shortcuts)
-DATA_DIR = STANDARD_STRUCTURE['data']
-RAW_DATA_DIR = STANDARD_STRUCTURE['data/raw']
-PROCESSED_DATA_DIR = STANDARD_STRUCTURE['data/processed']
-EXTERNAL_DATA_DIR = STANDARD_STRUCTURE['data/external']
-INTERIM_DATA_DIR = STANDARD_STRUCTURE['data/interim']
+DATA_DIRECTORY = standar_structures['data']
+RAW_DATA_DIRECTORY = standar_structures['data/raw']
+PROCESSED_DATA_DIRECTORY = standar_structures['data/processed']
+EXTERNAL_DATA_DIRECTORY = standar_structures['data/external']
+INTERMEDIATE_DATA_DIRECTORY = standar_structures['data/interim']
 
-NOTEBOOKS_DIR = STANDARD_STRUCTURE['notebooks']
-REPORTS_DIR = STANDARD_STRUCTURE['reports']
-FIGURES_DIR = STANDARD_STRUCTURE['reports/figures']
-SRC_DIR = STANDARD_STRUCTURE['src']
-TESTS_DIR = STANDARD_STRUCTURE['tests']
-DOCS_DIR = STANDARD_STRUCTURE['docs']
+NOTEBOOKS_DIRECTORY = standar_structures['notebooks']
+REPORTS_DIRECTORY = standar_structures['reports']
+FIGURES_DIRECTORY = standar_structures['reports/figures']
+SRC_DIRECTORY = standar_structures['src'] #? src -> "Source Code"
+TEST_DIRECTORY = standar_structures['tests']
+DOCUMENTS_DIRECTORY = standar_structures['docs']
+CONFIG_DIRECTORY = standar_structures['config']
+SCRIPTS_DIRECTORY = standar_structures['scripts']
 
-
-# ============================================================
-# ⚙️ ARCHIVOS DE ENTRADA (data/raw/)
-# ============================================================
-
-INPUT_FILES = {
-    'hospital': 'hospital_data.csv',
-    'Startup': 'startup_data.csv'
-    # ⬇️ AGREGA TUS ARCHIVOS AQUÍ ⬇️
-}
-
+# Extraer del JSON
+INPUT_FILES = CONFIG.get('input_files', {})
+OUTPUT_FILES = CONFIG.get('output_files', {})
+KAGGLE_DATASETS = CONFIG.get('kaggle_datasets', {})
+APIS_CONFIG = CONFIG.get('apis', {})
+PROCESSING_CONFIG = CONFIG.get('processing', {})
+VISUALIZATION_CONFIG = CONFIG.get('visualization', {})
 
 # ============================================================
-# ⚙️ ARCHIVOS DE SALIDA (data/processed/)
+# Funciones de gestión de estructura
 # ============================================================
 
-OUTPUT_FILES = {
-    'hospital_clean': 'hospital_data_clean.csv',
-    'Startup_clean': 'startup_data_clean.csv'
-    # ⬇️ AGREGA TUS ARCHIVOS DE SALIDA AQUÍ ⬇️
-}
-
-
-# ============================================================
-# ⚙️ DATASETS DE KAGGLE
-# ============================================================
-
-KAGGLE_DATASETS = {
-    'hospital': 'jaderz/hospital-beds-management',
-    'Startup': 'yanmaksi/big-startup-secsees-fail-dataset-from-crunchbase'
-    # ⬇️ AGREGA TUS DATASETS AQUÍ ⬇️
-}
-
-
-# ============================================================
-# FUNCIONES DE GESTIÓN DE ESTRUCTURA
-# ============================================================
-
+# 1. función para verificar que las carpetas existen
 def check_structure_exists() -> dict:
     """
     Verifica qué carpetas de la estructura ya existen
@@ -160,11 +193,11 @@ def check_structure_exists() -> dict:
         dict: {nombre_carpeta: existe (bool)}
     """
     status = {}
-    for name, path in STANDARD_STRUCTURE.items():
+    for name, path in standar_structures.items():
         status[name] = path.exists()
     return status
 
-
+# 2. función para crear las carpetas faltantes
 def verify_and_create_structure(verbose: bool = True) -> tuple:
     """
     Verifica la estructura y crea solo las carpetas faltantes
@@ -177,7 +210,7 @@ def verify_and_create_structure(verbose: bool = True) -> tuple:
     """
     if verbose:
         print("\n" + "="*70)
-        print("🔍 VERIFICANDO ESTRUCTURA DEL PROYECTO")
+        print("🔍 Verificando estructura de carpetas del proyecto")
         print("="*70)
 
     # Verificar estado actual
@@ -197,7 +230,7 @@ def verify_and_create_structure(verbose: bool = True) -> tuple:
         print("\n✅ Carpetas existentes:")
         for name, exists in status.items():
             if exists:
-                print(f"   ✓ {name}/")
+                print(f"📁 {name}/")
 
     # Crear carpetas faltantes
     carpetas_creadas = []
@@ -208,11 +241,11 @@ def verify_and_create_structure(verbose: bool = True) -> tuple:
             print(f"\n📁 Creando {len(missing)} carpetas faltantes:")
 
         for name in missing:
-            path = STANDARD_STRUCTURE[name]
+            path = standar_structures[name]
             path.mkdir(parents=True, exist_ok=True)
             carpetas_creadas.append(name)
             if verbose:
-                print(f"   ✓ {name}/")
+                print(f"📁 {name}/")
 
     if verbose:
         print("\n" + "="*70)
@@ -226,7 +259,7 @@ def verify_and_create_structure(verbose: bool = True) -> tuple:
 
     return estructura_existia, carpetas_creadas
 
-
+# 3. Función para mostrar la estructura del proyecto
 def show_structure(show_files: bool = False):
     """
     Muestra la estructura del proyecto en formato árbol
@@ -235,15 +268,15 @@ def show_structure(show_files: bool = False):
         show_files: Mostrar también archivos (no solo carpetas)
     """
     print("\n" + "="*70)
-    print("📂 ESTRUCTURA DEL PROYECTO")
+    print("📂 Estructura del proyecto")
     print("="*70)
-    print(f"\n{BASE_DIR.name}/")
+    print(f"\n{PROJECT_ROOT_FOLDER.name}/")
 
     # Carpetas principales en orden
     main_folders = ['data', 'src', 'notebooks', 'reports', 'tests', 'docs']
 
     for folder in main_folders:
-        folder_path = BASE_DIR / folder
+        folder_path = PROJECT_ROOT_FOLDER / folder
         if folder_path.exists():
             print(f"├── {folder}/")
 
@@ -279,79 +312,57 @@ def show_structure(show_files: bool = False):
     print("└── LICENSE")
     print("\n" + "="*70)
 
-
-# ============================================================
-# FUNCIONES DE ACCESO A RUTAS
-# ============================================================
-
+# 4. Función para obtener ruta de archivo en data/raw/
 def get_raw_path(file_key: str) -> Path:
-    """
-    Obtiene ruta completa de archivo en data/raw/
-
-    Args:
-        file_key: Clave del archivo en INPUT_FILES
-
-    Returns:
-        Path: Ruta completa del archivo
-
-    Ejemplo:
-        >>> path = get_raw_path('hospital')
-        >>> print(path)
-        /home/user/proyecto/data/raw/hospital_data.csv
-    """
+    """Obtiene ruta de archivo en data/raw/"""
     if file_key not in INPUT_FILES:
-        available = ', '.join(INPUT_FILES.keys())
+        available = ', '.join(INPUT_FILES.keys()) if INPUT_FILES else 'ninguno'
         raise ValueError(
             f"\n❌ Archivo '{file_key}' no encontrado.\n"
-            f"   Archivos disponibles: {available}\n"
-            f"   Agrégalo en INPUT_FILES en config.py"
+            f"   Disponibles: {available}\n"
+            f"   Agrégalo en: config/project_config.json → input_files"
         )
 
-    return RAW_DATA_DIR / INPUT_FILES[file_key]
+    return RAW_DATA_DIRECTORY / INPUT_FILES[file_key]
 
-
+# 5. Función para obtener ruta de archivo en data/processed/
 def get_processed_path(file_key: str) -> Path:
-    """
-    Obtiene ruta completa de archivo en data/processed/
-
-    Args:
-        file_key: Clave del archivo en OUTPUT_FILES
-
-    Returns:
-        Path: Ruta completa del archivo
-    """
+    """Obtiene ruta de archivo en data/processed/"""
     if file_key not in OUTPUT_FILES:
-        available = ', '.join(OUTPUT_FILES.keys())
+        available = ', '.join(OUTPUT_FILES.keys()) if OUTPUT_FILES else 'ninguno'
         raise ValueError(
             f"\n❌ Archivo '{file_key}' no encontrado.\n"
-            f"   Archivos disponibles: {available}\n"
-            f"   Agrégalo en OUTPUT_FILES en config.py"
+            f"   Disponibles: {available}\n"
+            f"   Agrégalo en: config/project_config.json → output_files"
         )
 
-    return PROCESSED_DATA_DIR / OUTPUT_FILES[file_key]
+    return PROCESSED_DATA_DIRECTORY / OUTPUT_FILES[file_key]
 
-
+# 6. Función para obtener
 def get_kaggle_dataset(dataset_key: str) -> str:
-    """
-    Obtiene identificador de dataset de Kaggle
-
-    Args:
-        dataset_key: Clave del dataset en KAGGLE_DATASETS
-
-    Returns:
-        str: Identificador del dataset (usuario/nombre)
-    """
+    """Obtiene identificador de dataset de Kaggle"""
     if dataset_key not in KAGGLE_DATASETS:
-        available = ', '.join(KAGGLE_DATASETS.keys())
+        available = ', '.join(KAGGLE_DATASETS.keys()) if KAGGLE_DATASETS else 'ninguno'
         raise ValueError(
             f"\n❌ Dataset '{dataset_key}' no encontrado.\n"
-            f"   Datasets disponibles: {available}\n"
-            f"   Agrégalo en KAGGLE_DATASETS en config.py"
+            f"   Disponibles: {available}\n"
+            f"   Agrégalo en: config/project_config.json → kaggle_datasets"
         )
 
     return KAGGLE_DATASETS[dataset_key]
 
+def reload_config():
+    """Recarga la configuración del JSON (útil si se editó)"""
+    global CONFIG, INPUT_FILES, OUTPUT_FILES, KAGGLE_DATASETS
 
+    CONFIG = load_config_json()
+    INPUT_FILES = CONFIG.get('input_files', {})
+    OUTPUT_FILES = CONFIG.get('output_files', {})
+    KAGGLE_DATASETS = CONFIG.get('kaggle_datasets', {})
+
+    print("✅ Configuración recargada desde JSON")
+
+# 7. Función para mostrar la configuración del archivo
 def show_config():
     """Muestra la configuración actual"""
     print("\n" + "="*70)
@@ -359,21 +370,21 @@ def show_config():
     print("="*70)
 
     print(f"\n📂 Rutas principales:")
-    print(f"   BASE_DIR:      {BASE_DIR}")
-    print(f"   DATA_DIR:      {DATA_DIR}")
-    print(f"   RAW_DATA_DIR:  {RAW_DATA_DIR}")
-    print(f"   PROCESSED_DIR: {PROCESSED_DATA_DIR}")
+    print(f"   BASE_DIR:      {PROJECT_ROOT_FOLDER}")
+    print(f"   DATA_DIR:      {DATA_DIRECTORY}")
+    print(f"   RAW_DATA_DIR:  {RAW_DATA_DIRECTORY}")
+    print(f"   PROCESSED_DIR: {PROCESSED_DATA_DIRECTORY}")
 
     print(f"\n📥 Archivos de entrada ({len(INPUT_FILES)}):")
     for key, filename in INPUT_FILES.items():
-        path = RAW_DATA_DIR / filename
+        path = RAW_DATA_DIRECTORY / filename
         exists = "✅" if path.exists() else "❌"
         size = f"({path.stat().st_size / 1024:.1f} KB)" if path.exists() else ""
         print(f"   {exists} '{key}' → {filename} {size}")
 
     print(f"\n📤 Archivos de salida ({len(OUTPUT_FILES)}):")
     for key, filename in OUTPUT_FILES.items():
-        path = PROCESSED_DATA_DIR / filename
+        path = PROCESSED_DATA_DIRECTORY / filename
         exists = "✅" if path.exists() else "❌"
         size = f"({path.stat().st_size / 1024:.1f} KB)" if path.exists() else ""
         print(f"   {exists} '{key}' → {filename} {size}")
@@ -386,7 +397,7 @@ def show_config():
 
 
 # ============================================================
-# INICIALIZACIÓN AUTOMÁTICA
+# Inicialización del proyecto automática
 # ============================================================
 
 # Al importar este módulo, verificar y crear estructura si es necesario
@@ -401,5 +412,52 @@ elif carpetas_creadas:
 else:
     print("\n👍 Usando estructura existente del proyecto.")
 
-print(f"\n📂 Datos se guardarán en: {RAW_DATA_DIR}")
-print(f"📊 Resultados se guardarán en: {PROCESSED_DATA_DIR}")
+print(f"\n📂 Datos se guardarán en: {RAW_DATA_DIRECTORY}")
+print(f"📊 Resultados se guardarán en: {PROCESSED_DATA_DIRECTORY}")
+
+# ============================================================
+# EXPORTAR (IMPORTANTE: Debe estar al final)
+# ============================================================
+
+__all__ = [
+    # Rutas principales
+    'PROJECT_ROOT_FOLDER',
+    'DATA_DIRECTORY',
+    'RAW_DATA_DIRECTORY',
+    'PROCESSED_DATA_DIRECTORY',
+    'EXTERNAL_DATA_DIRECTORY',
+    'INTERMEDIATE_DATA_DIRECTORY',
+    'NOTEBOOKS_DIRECTORY',
+    'REPORTS_DIRECTORY',
+    'FIGURES_DIRECTORY',
+    'SRC_DIRECTORY',
+    'TEST_DIRECTORY',
+    'DOCUMENTS_DIRECTORY',
+    'CONFIG_DIRECTORY',
+    'SCRIPTS_DIRECTORY',
+    'standar_structures',
+
+    # Configuraciones del JSON
+    'CONFIG',
+    'INPUT_FILES',
+    'OUTPUT_FILES',
+    'KAGGLE_DATASETS',
+    'APIS_CONFIG',
+    'PROCESSING_CONFIG',
+    'VISUALIZATION_CONFIG',
+
+    # Funciones principales
+    'get_raw_path',
+    'get_processed_path',
+    'get_kaggle_dataset',
+    'reload_config',
+    'show_config',
+
+    # Funciones de estructura
+    'verify_and_create_structure',
+    'check_structure_exists',
+
+    # Funciones auxiliares
+    'load_config_json',
+    'find_project_root',
+]

@@ -1,30 +1,38 @@
 """
-Script de prueba para verificar config.py
+Script para probar configuración con JSON
 """
 
-# Esto importará y ejecutará la verificación automáticamente
 from src.data.config import (
-    show_structure,
     show_config,
-    BASE_DIR,
-    RAW_DATA_DIR,
-    PROCESSED_DATA_DIR
+    get_raw_path,
+    get_kaggle_dataset,
+    INPUT_FILES,
+    OUTPUT_FILES,
+    KAGGLE_DATASETS,
+    reload_config
 )
 
-print("\n" + "="*70)
-print("🧪 PRUEBA DE CONFIGURACIÓN")
 print("="*70)
-
-# Mostrar estructura
-show_structure(show_files=True)
+print("🧪 PRUEBA DE CONFIGURACIÓN CON JSON")
+print("="*70)
 
 # Mostrar configuración
 show_config()
 
-# Verificar rutas
-print("\n🔍 VERIFICACIÓN DE RUTAS:")
-print(f"   BASE_DIR existe: {BASE_DIR.exists()}")
-print(f"   RAW_DATA_DIR existe: {RAW_DATA_DIR.exists()}")
-print(f"   PROCESSED_DATA_DIR existe: {PROCESSED_DATA_DIR.exists()}")
+# Probar acceso a archivos
+print("\n🔍 PROBANDO ACCESO A RUTAS:")
+
+if INPUT_FILES:
+    primer_archivo = list(INPUT_FILES.keys())[0]
+    print(f"\n📥 Ruta de '{primer_archivo}':")
+    print(f"   {get_raw_path(primer_archivo)}")
+
+if KAGGLE_DATASETS:
+    primer_dataset = list(KAGGLE_DATASETS.keys())[0]
+    print(f"\n🌐 Dataset '{primer_dataset}':")
+    print(f"   {get_kaggle_dataset(primer_dataset)}")
 
 print("\n✅ Prueba completada")
+print("\n💡 Para editar configuración:")
+print("   Edita: config/project_config.json")
+print("   Y ejecuta: reload_config()")
