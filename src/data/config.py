@@ -121,8 +121,7 @@ DOCS_DIR = STANDARD_STRUCTURE['docs']
 
 INPUT_FILES = {
     'hospital': 'hospital_data.csv',
-    'startups': 'startups_investment.csv',
-
+    'Startup': 'startup_data.csv'
     # ⬇️ AGREGA TUS ARCHIVOS AQUÍ ⬇️
 }
 
@@ -133,8 +132,7 @@ INPUT_FILES = {
 
 OUTPUT_FILES = {
     'hospital_clean': 'hospital_data_clean.csv',
-    'startups_clean': 'startups_investment_clean.csv',
-
+    'Startup_clean': 'startup_data_clean.csv'
     # ⬇️ AGREGA TUS ARCHIVOS DE SALIDA AQUÍ ⬇️
 }
 
@@ -145,8 +143,7 @@ OUTPUT_FILES = {
 
 KAGGLE_DATASETS = {
     'hospital': 'jaderz/hospital-beds-management',
-    'startups': 'yanmaksi/big-startup-secsees-fail-dataset-from-crunchbase',
-
+    'Startup': 'yanmaksi/big-startup-secsees-fail-dataset-from-crunchbase'
     # ⬇️ AGREGA TUS DATASETS AQUÍ ⬇️
 }
 
